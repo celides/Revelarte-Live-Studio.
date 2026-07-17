@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Revelarte Live Studio</title>
+    <style>
+        body { background-color: #1a1a1a; color: white; display: flex; flex-direction: column; align-items: center; }
+        #videoContainer { width: 80%; height: 60vh; background: black; border: 2px solid #555; }
+        video { width: 100%; height: 100%; }
+        /* El botón de cámara no se incluye para el cliente, garantizando el control de Adriana */
+    </style>
+</head>
+<body>
+    <h1>Revelarte Live Studio</h1>
+    <div id="videoContainer">
+        <video id="clientVideo" autoplay playsinline></video>
+    </div>
+    <button onclick="toggleAudio()">Alternar Micrófono</button>
+
+    <script src="app.js"></script>
+</body>
+</html>
