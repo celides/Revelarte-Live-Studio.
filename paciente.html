@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Revelarte Live Studio — Sesión de Arteterapia (Paciente)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #1a1a1a; font-family: 'Inter', sans-serif; color: #f0ece4; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .container { max-width: 800px; width: 100%; }
+        .header { text-align: center; margin-bottom: 30px; border-bottom: 1px solid rgba(212, 175, 55, 0.2); padding-bottom: 20px; }
+        .header h1 { font-family: 'Playfair Display', serif; font-size: 1.8rem; color: #f0ece4; }
+        .header h1 span { color: #d4af37; }
+        .header p { font-size: 0.85rem; color: #b0b0b0; margin-top: 6px; }
+        
+        .video-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+        .video-card { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 12px; overflow: hidden; aspect-ratio: 16/9; position: relative; }
+        .video-card video { width: 100%; height: 100%; object-fit: cover; background: #111; }
+        .video-card.local video { transform: scaleX(-1); }
+        .video-label { position: absolute; bottom: 12px; left: 12px; font-size: 0.7rem; color: rgba(240, 236, 228, 0.7); background: rgba(0, 0, 0, 0.5); padding: 4px 12px; border-radius: 20px; }
+        
+        .controls { display: flex; justify-content: center; gap: 12px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(212, 175, 55, 0.15); border-radius: 12px; padding: 16px; }
+        .btn { padding: 10px 24px; border: 1px solid rgba(212, 175, 55, 0.3); background: transparent; color: #f0ece4; border-radius: 30px; font-size: 0.8rem; cursor: pointer; transition: all 0.3s; font-family: 'Inter', sans-serif; }
+        .btn:hover { background: rgba(212, 175, 55, 0.1); border-color: #d4af37; }
+        .btn.active { background: #d4af37; color: #1a1a1a; border-color: #d4af37; }
+        .btn.danger { border-color: #e74c3c; color: #e74c3c; }
+        .btn.danger.active { background: #e74c3c; color: #fff; }
+
+        .info-bar { margin-top: 20px; text-align: center; font-size: 0.75rem; color: #999; padding: 12px; border: 1px solid rgba(212, 175, 55, 0.08); border-radius: 12px; }
+        .info-bar input { background: rgba(255,255,255,0.05); border: 1px solid rgba(212,175,55,0.2); color: #f0ece4; padding: 8px 12px; border-radius: 8px; width: 100%; max-width: 300px; margin-top: 8px; font-family: monospace; text-align: center; }
+        .info-bar button { background: #d4af37; color: #1a1a1a; border: none; padding: 8px 20px; border-radius: 20px; margin-top: 8px; cursor: pointer; font-weight: 500; }
+        .info-bar button:hover { opacity: 0.9; }
+        
+        @media (max-width: 600px) { .video-grid { grid-template-columns: 1fr; gap: 12px; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Revelarte <span>Live Studio</span></h1>
+            <p>Tu espacio de arteterapia</p>
+        </div>
+
+        <div class="video-grid">
+            <div class="video-card local">
+                <video id="localVideo" autoplay muted playsinline></video>
+                <div class="video-label">📹 Tú</div>
+            </div>
+            <div class="video-card">
+                <video id="remoteVideo" autoplay playsinline></video>
+                <div class="video-label">🧘 Terapeuta</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn active" id="toggleMyAudio">🎤 Mi micrófono</button>
+            <button class="btn danger" id="endCall">📞 Terminar</button>
+        </div>
+
+        <div class="info-bar">
+            <p>🔑 Ingresa el ID del terapeuta para conectarte</p>
+            <input type="text" id="peerIdInput" placeholder="Ej: 1234-5678-9012" />
+            <button id="connectBtn">Conectarme</button>
+            <div id="connectionStatus" style="margin-top:10px; color:#888;">Esperando conexión...</div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script>
+        const state = { peer: null, call: null, localStream: null };
+        const el = (id) => document.getElementById(id);
+
+        async function init() {
+            try {
+                state.localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                el('localVideo').srcObject = state.localStream;
+                state.peer = new Peer();
+                
+                state.peer.on('open', () => {
+                    el('connectionStatus').textContent = '✅ Listo. Ingresa el ID del terapeuta.';
+                });
+
+                state.peer.on('call', (call) => {
+                    call.answer(state.localStream);
+                    call.on('stream', (remoteStream) => {
+                        el('remoteVideo').srcObject = remoteStream;
+                        state.call = call;
+                        el('connectionStatus').textContent = '🟢 Conectado al terapeuta';
+                    });
+                    call.on('close', () => {
+                        el('remoteVideo').srcObject = null;
+                        el('connectionStatus').textContent = '🔴 Sesión terminada';
+                    });
+                });
+            } catch (e) {
+                alert('Por favor permite el acceso a cámara y micrófono.');
+            }
+        }
+
+        el('connectBtn').addEventListener('click', () => {
+            const peerId = el('peerIdInput').value.trim();
+            if (!peerId) return alert('Ingresa el ID del terapeuta.');
+            
+            const call = state.peer.call(peerId, state.localStream);
+            call.on('stream', (remoteStream) => {
+                el('remoteVideo').srcObject = remoteStream;
+                state.call = call;
+                el('connectionStatus').textContent = '🟢 Conectado al terapeuta';
+            });
+            call.on('close', () => {
+                el('remoteVideo').srcObject = null;
+                el('connectionStatus').textContent = '🔴 Sesión terminada';
+            });
+        });
+
+        el('toggleMyAudio').addEventListener('click', () => {
+            const enabled = state.localStream.getAudioTracks()[0].enabled;
+            state.localStream.getAudioTracks()[0].enabled = !enabled;
+            el('toggleMyAudio').classList.toggle('active', !enabled);
+        });
+
+        el('endCall').addEventListener('click', () => {
+            if (state.call) state.call.close();
+            el('remoteVideo').srcObject = null;
+            el('connectionStatus').textContent = '🔴 Sesión terminada';
+        });
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
