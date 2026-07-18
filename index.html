@@ -21,3 +21,22 @@
     <script src="app.js"></script>
 </body>
 </html>
+
+async function iniciarCamara() {
+    try {
+        // Esta línea es la que realmente "enciende" la cámara
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        
+        // Aquí conectamos la señal de la cámara con el cuadro en tu pantalla
+        const localVideo = document.getElementById('localVideo');
+        localVideo.srcObject = stream;
+        console.log("Cámara encendida correctamente");
+    } catch (error) {
+        console.error("Error al acceder a la cámara: ", error);
+        alert("No se pudo acceder a la cámara. Asegúrate de dar permisos.");
+    }
+}
+
+// Ejecutamos la función al cargar la página
+iniciarCamara();
+
